@@ -1132,5 +1132,58 @@ secret_token=aaaabbbb
 <pre><code>HTTP/1.1 200 OK … 
 Set-Cookie: secret_cookie=aaabbb
 </code></pre>
-<p>在上述每个示例中，操作通常是单向的，执行双向通信可能变得麻烦。 例如，使用加载的IFRAME的URI嵌入数据允许接收应用程序接收数据，但是没有简单的方式进行通信。 每种所描述的方法还面临着许多安全挑战，例如验证POST请求的起源和通过Open Redirection漏洞防止OAuth利用</p>
-<p>这些解决方法可能会影响用户体验，性能和应用程序的安全性的原因有很多。 为了解决这个问题，引入了window.postMessage来提供跨域文档之间的通信方法。</p></article></body></html>
+<p>在上述每个示例中，操作通常是单向的，执行双向通信可能变得麻烦。 例如，使用加载的IFRAME的URI嵌入数据允许接收应用程序接收数据，但是没有简单的方式进行通信。 每种所描述的方法还面临着许多安全挑战，例如验证POST请求的起源和通过Open Redirection漏洞防止OAuth利用。</p>
+<p>这些解决方法可能会影响用户体验，性能和应用程序的安全性的原因有很多。 为了解决这个问题，引入了window.postMessage来提供跨域文档之间的通信方法。</p>
+<h4 id="2-windowpostmessage"><a name="user-content-2-windowpostmessage" href="#2-windowpostmessage" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>2. WINDOW.POSTMESSAGE</h4>
+<p>window.postMessage 方法通过提供一个受控制的通信方法在不同源的window间来解决跨域问题。</p>
+<p>简单地说,window.postMessage允许一个对象化或字符串通过JAVASCRIPT被发送到另一个窗口或frame.接收的窗口可以忽略消息或处理它通过开发者定义的函数。虽然没有安全验证在消息出站的时候，但是消息入站的事件镇南关包含一个origin属性用来验证发送域.</p>
+<p>要使用postMessage，接收方要定义一个函数来处理消息，然后使用内置的addEventListener函数将其添加为消息处理程序。</p>
+<p>发送方取得一个目标窗口的引用然后调用PostMessage方法去发送消息。</p>
+<h5 id="211-postmessage"><a name="user-content-211-postmessage" href="#211-postmessage" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>2.1.1 POSTMESSAGE例子</h5>
+<p>在这个简短的代码例子例子中,父页面托管在http://appcheck/parent.html并且注册一个时间监听函数去处理接收到的消息。也main内嵌了一个iframe加载http://sec-1.com/child.html 用来发送消息给他的上级。</p>
+<h5 id="2111"><a name="user-content-2111" href="#2111" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>2.1.1.1 发送消息</h5>
+<p>去发送消息，发送页面必须先取得接受窗口的一个引用然后再调用otherWindow.postMessage 方法传递消息和目标域<br />
+postMessasge方法格式:</p>
+<h2 id="_4"><a name="user-content-_4" href="#_4" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a></h2>
+<pre><code>otherWindow.postMessage(message, targetOrigin, [transfer])
+</code></pre>
+<p>otherWindow :其他窗口的引用<br />
+Message:发送到另外个窗口的对象或字符串<br />
+targetOrigin:消息的目标 <br />
+              协议，主机名和端口在这个参数中提供的要与事件派发的对象一致<br />
+              或者一个通配符* 也能使用<br />
+transfer:与消息一起传输的可传输对象序列。</p>
+<p>举例，下面的JAVASCRIPT代码可以用来提交一个消息到 <a href="https://www.google.com">https://www.google.com</a></p>
+<p>下表列出了将消息提交到另一个窗口的更多示例<br />
+例子                                  说明<br />
+parent.postMessage()                    iframe可以和他的父级通信通过parent引用<br />
+iframe.contentWindow.postMessage()      当和页面中子元素iframe通信时使用iframe.contentWindow   例子</p>
+<h2 id="_5"><a name="user-content-_5" href="#_5" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a></h2>
+<pre><code>&lt;iframe id="ifrm" src="http://other"&gt;
+&lt;script&gt; 
+    i=document.getElementById("ifrm") 
+    i.contentWindow.postMessage(..) 
+&lt;/script&gt;
+</code></pre>
+<p>window.opener.postMessage()             一个通过window.open打开的可以通过window.opener.postMessage来提交回消息到上级页面<br />
+event.source.postMessage()              在处理了消息后接收页面可以提交一个消息会发送者通过event.source.postMessage()</p>
+<p>在我们的例子中内嵌的iframe提交消息到上级通过下面的JS代码</p>
+<h2 id="_6"><a name="user-content-_6" href="#_6" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a></h2>
+<pre><code>&lt;script&gt; 
+    parent.postMessage("Hi parent, im ready","*");
+&lt;/script&gt;
+</code></pre>
+<p>加载父页面会产生以下结果;<br />
+<img alt="父页面结果" src="///D://Withdrawn.github.io/sec/images/40287-1.png" title="父页面结果" /></p>
+<h5 id="2112"><a name="user-content-2112" href="#2112" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>2.1.1.2 接受和处理消息事件</h5>
+<p>下面的代码内嵌到parent.html并且注册postMessage事件处理者去显示和弹出收到的消息。</p>
+<h2 id="_7"><a name="user-content-_7" href="#_7" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a></h2>
+<pre><code>&lt;script&gt; 
+    function recvMessage(event){
+        msg  = "Message from " + event.origin; // Build a message containing   
+        msg += "Containing : " + event.data; // data from the event object   
+        alert(msg);     // Display message using alert() 
+    }
+    window.addEventListener("message", recvMessage) // Register the handler  
+&lt;/script&gt;
+</code></pre></article></body></html>

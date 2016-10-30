@@ -48,41 +48,6 @@ https://www.exploit-db.com/docs/40287.pdf
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### 1.介绍
 Sec-1 Ltd 与 AppCheck.com 合作去担任(undertake)一个研究项目下一代网页应用带来的安全挑战.这个项目包含同源通信机制的调查通过HTML，包含postMessage和CORS.
 
@@ -169,3 +134,67 @@ yourapp.com 设置这个COOKIE在自己的域下
 在上述每个示例中，操作通常是单向的，执行双向通信可能变得麻烦。 例如，使用加载的IFRAME的URI嵌入数据允许接收应用程序接收数据，但是没有简单的方式进行通信。 每种所描述的方法还面临着许多安全挑战，例如验证POST请求的起源和通过Open Redirection漏洞防止OAuth利用。
 
 这些解决方法可能会影响用户体验，性能和应用程序的安全性的原因有很多。 为了解决这个问题，引入了window.postMessage来提供跨域文档之间的通信方法。
+
+
+####2. WINDOW.POSTMESSAGE
+window.postMessage 方法通过提供一个受控制的通信方法在不同源的window间来解决跨域问题。
+
+简单地说,window.postMessage允许一个对象化或字符串通过JAVASCRIPT被发送到另一个窗口或frame.接收的窗口可以忽略消息或处理它通过开发者定义的函数。虽然没有安全验证在消息出站的时候，但是消息入站的事件镇南关包含一个origin属性用来验证发送域.
+
+要使用postMessage，接收方要定义一个函数来处理消息，然后使用内置的addEventListener函数将其添加为消息处理程序。
+
+发送方取得一个目标窗口的引用然后调用PostMessage方法去发送消息。
+
+##### 2.1.1 POSTMESSAGE例子
+在这个简短的代码例子例子中,父页面托管在http://appcheck/parent.html并且注册一个时间监听函数去处理接收到的消息。也main内嵌了一个iframe加载http://sec-1.com/child.html 用来发送消息给他的上级。
+
+##### 2.1.1.1 发送消息
+去发送消息，发送页面必须先取得接受窗口的一个引用然后再调用otherWindow.postMessage 方法传递消息和目标域
+postMessasge方法格式:
+##
+	otherWindow.postMessage(message, targetOrigin, [transfer]) 
+
+otherWindow :其他窗口的引用
+Message:发送到另外个窗口的对象或字符串
+targetOrigin:消息的目标 
+			  协议，主机名和端口在这个参数中提供的要与事件派发的对象一致
+			  或者一个通配符* 也能使用
+transfer:与消息一起传输的可传输对象序列。
+
+举例，下面的JAVASCRIPT代码可以用来提交一个消息到 https://www.google.com
+
+下表列出了将消息提交到另一个窗口的更多示例
+例子									说明
+parent.postMessage() 					iframe可以和他的父级通信通过parent引用
+iframe.contentWindow.postMessage() 		当和页面中子元素iframe通信时使用iframe.contentWindow   例子
+##
+	<iframe id="ifrm" src="http://other">
+	<script> 
+		i=document.getElementById("ifrm") 
+		i.contentWindow.postMessage(..) 
+	</script>
+
+window.opener.postMessage() 			一个通过window.open打开的可以通过window.opener.postMessage来提交回消息到上级页面
+event.source.postMessage() 				在处理了消息后接收页面可以提交一个消息会发送者通过event.source.postMessage()
+
+在我们的例子中内嵌的iframe提交消息到上级通过下面的JS代码
+##
+	<script> 
+		parent.postMessage("Hi parent, im ready","*");
+	</script>
+
+加载父页面会产生以下结果;
+![父页面结果](images/40287-1.png "父页面结果")
+
+
+##### 2.1.1.2 接受和处理消息事件
+下面的代码内嵌到parent.html并且注册postMessage事件处理者去显示和弹出收到的消息。
+##
+	<script> 
+		function recvMessage(event){
+			msg  = "Message from " + event.origin; // Build a message containing   
+			msg += "Containing : " + event.data; // data from the event object   
+			alert(msg);     // Display message using alert() 
+		}
+		window.addEventListener("message", recvMessage) // Register the handler  
+	</script> 
